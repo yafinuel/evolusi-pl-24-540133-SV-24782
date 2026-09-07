@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  uji:
+    name: Uji unit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Siapkan PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+          coverage: none
+
+      - name: Pasang dependensi
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Jalankan pengujian
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test
+
+  lint:
+    name: Lint kode
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Siapkan PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Pasang dependensi
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Periksa gaya kode
+        run: vendor/bin/phpcs --standard=PSR12 app/
