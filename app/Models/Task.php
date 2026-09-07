@@ -42,6 +42,15 @@ class Task extends Model
     ];
 
     /**
+     * The model's default values for attributes.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'is_completed' => false,
+    ];
+
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>

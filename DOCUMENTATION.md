@@ -79,6 +79,35 @@ Didefinisikan di `routes/web.php`:
 
 ---
 
+## 🧪 Pengujian (Testing) & CI
+
+Proyek dilengkapi dengan pengujian terotomatisasi (Unit & Feature Tests) serta workflow CI (GitHub Actions).
+
+### 1. Pengujian Terotomatisasi (PHPUnit)
+Jalankan pengujian menggunakan command:
+```bash
+php artisan test
+```
+
+Unit & Feature Test Suites:
+- **`tests/Feature/TaskTest.php`**:
+  - `test_can_display_task_dashboard`: Memastikan dashboard utama (GET `/tasks`) dapat diakses.
+  - `test_can_create_a_new_task`: Memastikan pembuatan to-do berhasil disimpan ke database SQLite.
+  - `test_requires_title_when_creating_task`: Memastikan validasi judul tidak boleh kosong.
+  - `test_can_display_edit_task_page`: Memastikan form halaman edit (GET `/tasks/{task}/edit`) dirender dengan benar.
+  - `test_can_update_a_task`: Memastikan update data to-do (PUT `/tasks/{task}`) sukses.
+  - `test_can_toggle_task_completion`: Memastikan status penyelesaian (PATCH `/tasks/{task}/toggle`) bisa beralih dari belum selesai ke selesai dan sebaliknya.
+  - `test_can_delete_a_task`: Memastikan to-do berhasil dihapus dari database (DELETE `/tasks/{task}`).
+- **`tests/Unit/TaskTest.php`**:
+  - Memastikan atribut casting model `Task` (`is_completed` ke boolean, `due_date` ke Carbon) dan nilai default (`is_completed => false`).
+
+### 2. Pemeriksaan Gaya Kode (PSR-12 Linting)
+```bash
+php vendor/bin/phpcs --standard=PSR12 app/
+```
+
+---
+
 ## 🛠️ Cara Menjalankan Aplikasi
 
 1. **Jalankan Migrasi Database SQLite**:
@@ -86,9 +115,15 @@ Didefinisikan di `routes/web.php`:
    php artisan migrate
    ```
 
-2. **Jalankan Server Lokal Laravel**:
+2. **Jalankan Pengujian (Testing)**:
+   ```bash
+   php artisan test
+   ```
+
+3. **Jalankan Server Lokal Laravel**:
    ```bash
    php artisan serve
    ```
 
-3. Buka peramban di `http://127.0.0.1:8000/` untuk mengakses **mytodoweb**.
+4. Buka peramban di `http://127.0.0.1:8000/` untuk mengakses **mytodoweb**.
+

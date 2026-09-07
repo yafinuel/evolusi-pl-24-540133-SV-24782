@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -8,7 +9,7 @@ use Illuminate\View\View;
 
 /**
  * Class TaskController
- * 
+ *
  * Handles CRUD actions and status toggles for To-Do items in mytodoweb.
  */
 class TaskController extends Controller
