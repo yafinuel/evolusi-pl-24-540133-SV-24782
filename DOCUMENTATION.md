@@ -39,43 +39,52 @@ Migrasi berada di `database/migrations/2026_09_07_000000_create_tasks_table.php`
   - `'due_date' => 'date'`
 
 ### 2. Controller: `App\Http\Controllers\TaskController` (`app/Http/Controllers/TaskController.php`)
-Menangani aksi CRUD dan interaksi pengguna:
-- `index()`: Menampilkan dashboard utama (`task.index`) berisi seluruh daftar to-do.
-- `store(Request $request)`: Validasi dan menyimpan data to-do baru.
-- `toggle(Task $task)`: Beralih status `is_completed` langsung dari dashboard tanpa berpindah halaman.
-- `edit(Task $task)`: Menampilkan halaman form pengisian edit to-do (`task.edit`).
-- `update(Request $request, Task $task)`: Memperbarui data to-do lalu mengarahkan kembali ke dashboard (`tasks.index`).
-- `destroy(Task $task)`: Menghapus data to-do dari database.
+Menangani aksi RESTful API CRUD dan interaksi status data to-do:
+- `index()`: Mengembalikan respon JSON berisi daftar to-do yang diurutkan (belum selesai terlebih dahulu, terbaru lebih dulu).
+- `store(Request $request)`: Validasi dan menyimpan data to-do baru, mengembalikan HTTP 201 dengan pesan sukses & objek task.
+- `show(Task $task)`: Mengembalikan data detail satu to-do (JSON).
+- `update(Request $request, Task $task)`: Memperbarui data to-do dan mengembalikan data terbaru (JSON).
+- `toggle(Task $task)`: Beralih status `is_completed` langsung dan mengembalikan status terbaru (JSON).
+- `destroy(Task $task)`: Menghapus data to-do dari database dan mengembalikan pesan sukses (JSON).
 
 ---
 
 ## 🌐 Rute URL (Routes)
 
-Didefinisikan di `routes/web.php`:
+Didefinisikan di `routes/api.php` (prefix `/api`):
 
 | HTTP Method | URI | Route Name | Action | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/` | - | Closure | Redirect ke `/tasks` |
-| `GET` | `/tasks` | `tasks.index` | `TaskController@index` | Dashboard To-Do List |
-| `POST` | `/tasks` | `tasks.store` | `TaskController@store` | Simpan To-Do baru |
-| `GET` | `/tasks/{task}/edit` | `tasks.edit` | `TaskController@edit` | Halaman form edit To-Do |
-| `PUT` | `/tasks/{task}` | `tasks.update` | `TaskController@update` | Simpan perubahan edit To-Do |
-| `PATCH` | `/tasks/{task}/toggle` | `tasks.toggle` | `TaskController@toggle` | Toggle status selesai/belum selesai |
-| `DELETE` | `/tasks/{task}` | `tasks.destroy` | `TaskController@destroy` | Hapus item To-Do |
+| `GET` | `/api/tasks` | `api.tasks.index` | `TaskController@index` | Mengambil seluruh daftar to-do (JSON) |
+| `POST` | `/api/tasks` | `api.tasks.store` | `TaskController@store` | Menyimpan to-do baru (JSON) |
+| `GET` | `/api/tasks/{task}` | `api.tasks.show` | `TaskController@show` | Mengambil detail to-do spesifik (JSON) |
+| `PUT` | `/api/tasks/{task}` | `api.tasks.update` | `TaskController@update` | Memperbarui to-do (JSON) |
+| `PATCH` | `/api/tasks/{task}/toggle` | `api.tasks.toggle` | `TaskController@toggle` | Toggle status selesai/belum selesai (JSON) |
+| `DELETE` | `/api/tasks/{task}` | `api.tasks.destroy` | `TaskController@destroy` | Menghapus to-do (JSON) |
+
+Rute Web di `routes/web.php`:
+| HTTP Method | URI | Description |
+| :--- | :--- | :--- |
+| `GET` | `/` | Redirect ke `/api/tasks` |
 
 ---
 
-## 🎨 Layout & Tampilan Views
+## 🎨 Frontend: Vue.js (`frontend/`)
 
-1. **`resources/views/task/index.blade.php`**:
-   - Tampilan Dashboard Utama **mytodoweb**.
-   - Skema warna: Terang / Minimalis Hitam-Putih (`#ffffff` primary background, font dan border tegas `#09090b`).
-   - Fitur utama: Form tambah tugas cepat, daftar tugas, badge tanggal, tombol toggle cepat, tombol edit (redirect ke form edit), dan tombol hapus.
+Antarmuka frontend menggunakan **Vue 3** berbasis **Vite** yang terletak di direktori `frontend/`:
 
-2. **`resources/views/task/edit.blade.php`**:
-   - Tampilan Halaman Edit Form To-Do.
-   - Menggunakan tema hitam-putih yang konsisten.
-   - Berisi input judul, deskripsi, due date, dan checkbox status selesai.
+1. **`frontend/src/App.vue`**:
+   - Komponen utama dashboard **mytodoweb**.
+   - Skema warna: Terang / Minimalis Hitam-Putih (`#ffffff` background, font dan border tegas `#09090b`).
+   - Fitur utama:
+     - Form tambah tugas cepat (Judul wajib, deskripsi dan tenggat waktu opsional).
+     - Indikator ringkasan statistik (Total tugas, Tugas selesai).
+     - Daftar tugas dengan checkbox toggle cepat.
+     - Modal dialog edit interaktif tanpa reload halaman.
+     - Konfirmasi penghapusan tugas.
+     - Notifikasi flash alert responsif.
+2. **`frontend/vite.config.js`**:
+   - Dilengkapi server reverse proxy dev ke backend Laravel (`http://127.0.0.1:8000/api`).
 
 ---
 
@@ -120,10 +129,18 @@ php vendor/bin/phpcs --standard=PSR12 app/
    php artisan test
    ```
 
-3. **Jalankan Server Lokal Laravel**:
+3. **Jalankan Server Backend Laravel**:
    ```bash
    php artisan serve
    ```
+   Server backend berjalan di `http://127.0.0.1:8000` dan menyediakan REST API di `/api/tasks`.
 
-4. Buka peramban di `http://127.0.0.1:8000/` untuk mengakses **mytodoweb**.
+4. **Jalankan Server Frontend Vue.js**:
+   Buka terminal baru di folder `frontend`:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Aplikasi frontend dapat diakses melalui peramban di `http://localhost:5173`.
 

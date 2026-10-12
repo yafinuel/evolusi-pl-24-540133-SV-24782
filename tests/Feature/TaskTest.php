@@ -11,19 +11,27 @@ class TaskTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Test displaying the dashboard.
+     * Test retrieving the task list via API.
      */
-    public function test_can_display_task_dashboard(): void
+    public function test_can_get_task_list(): void
     {
-        $response = $this->get('/tasks');
+        Task::create([
+            'title' => 'Task Satu',
+        ]);
+        Task::create([
+            'title' => 'Task Dua',
+        ]);
+
+        $response = $this->getJson('/api/tasks');
 
         $response->assertStatus(200);
-        $response->assertSee('mytodoweb');
-        $response->assertSee('Daftar To-Do');
+        $response->assertJsonCount(2);
+        $response->assertJsonFragment(['title' => 'Task Satu']);
+        $response->assertJsonFragment(['title' => 'Task Dua']);
     }
 
     /**
-     * Test creating a new task.
+     * Test creating a new task via API.
      */
     public function test_can_create_a_new_task(): void
     {
@@ -33,10 +41,13 @@ class TaskTest extends TestCase
             'due_date' => '2026-09-15',
         ];
 
-        $response = $this->post('/tasks', $payload);
+        $response = $this->postJson('/api/tasks', $payload);
 
-        $response->assertRedirect('/tasks');
-        $response->assertSessionHas('success', 'To-Do berhasil ditambahkan!');
+        $response->assertStatus(201);
+        $response->assertJsonFragment([
+            'message' => 'To-Do berhasil ditambahkan!',
+            'title' => 'Belajar Software Evolution',
+        ]);
 
         $this->assertDatabaseHas('tasks', [
             'title' => 'Belajar Software Evolution',
@@ -49,32 +60,37 @@ class TaskTest extends TestCase
      */
     public function test_requires_title_when_creating_task(): void
     {
-        $response = $this->post('/tasks', [
+        $response = $this->postJson('/api/tasks', [
             'title' => '',
             'description' => 'Tanpa judul',
         ]);
 
-        $response->assertSessionHasErrors(['title']);
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['title']);
     }
 
     /**
-     * Test displaying edit task page.
+     * Test showing a single task.
      */
-    public function test_can_display_edit_task_page(): void
+    public function test_can_show_a_task(): void
     {
         $task = Task::create([
-            'title' => 'Task Lama',
+            'title' => 'Detail Task',
+            'description' => 'Detail deskripsi',
         ]);
 
-        $response = $this->get("/tasks/{$task->id}/edit");
+        $response = $this->getJson("/api/tasks/{$task->id}");
 
         $response->assertStatus(200);
-        $response->assertSee('Form Edit To-Do');
-        $response->assertSee('Task Lama');
+        $response->assertJson([
+            'id' => $task->id,
+            'title' => 'Detail Task',
+            'description' => 'Detail deskripsi',
+        ]);
     }
 
     /**
-     * Test updating a task.
+     * Test updating a task via API.
      */
     public function test_can_update_a_task(): void
     {
@@ -84,15 +100,18 @@ class TaskTest extends TestCase
             'is_completed' => false,
         ]);
 
-        $response = $this->put("/tasks/{$task->id}", [
+        $response = $this->putJson("/api/tasks/{$task->id}", [
             'title' => 'Judul Terupdate',
             'description' => 'Deskripsi Terupdate',
             'due_date' => '2026-09-20',
-            'is_completed' => '1',
+            'is_completed' => true,
         ]);
 
-        $response->assertRedirect('/tasks');
-        $response->assertSessionHas('success', 'To-Do berhasil diperbarui!');
+        $response->assertStatus(200);
+        $response->assertJsonFragment([
+            'message' => 'To-Do berhasil diperbarui!',
+            'title' => 'Judul Terupdate',
+        ]);
 
         $this->assertDatabaseHas('tasks', [
             'id' => $task->id,
@@ -103,7 +122,7 @@ class TaskTest extends TestCase
     }
 
     /**
-     * Test toggling completion status directly from dashboard.
+     * Test toggling completion status via API.
      */
     public function test_can_toggle_task_completion(): void
     {
@@ -113,18 +132,24 @@ class TaskTest extends TestCase
         ]);
 
         // Toggle to completed
-        $response1 = $this->patch("/tasks/{$task->id}/toggle");
-        $response1->assertRedirect('/tasks');
+        $response1 = $this->patchJson("/api/tasks/{$task->id}/toggle");
+        $response1->assertStatus(200);
+        $response1->assertJsonFragment([
+            'message' => 'To-Do ditandai selesai!',
+        ]);
         $this->assertTrue($task->fresh()->is_completed);
 
         // Toggle back to incomplete
-        $response2 = $this->patch("/tasks/{$task->id}/toggle");
-        $response2->assertRedirect('/tasks');
+        $response2 = $this->patchJson("/api/tasks/{$task->id}/toggle");
+        $response2->assertStatus(200);
+        $response2->assertJsonFragment([
+            'message' => 'To-Do ditandai belum selesai!',
+        ]);
         $this->assertFalse($task->fresh()->is_completed);
     }
 
     /**
-     * Test deleting a task.
+     * Test deleting a task via API.
      */
     public function test_can_delete_a_task(): void
     {
@@ -132,10 +157,12 @@ class TaskTest extends TestCase
             'title' => 'Task Yang Akan Dihapus',
         ]);
 
-        $response = $this->delete("/tasks/{$task->id}");
+        $response = $this->deleteJson("/api/tasks/{$task->id}");
 
-        $response->assertRedirect('/tasks');
-        $response->assertSessionHas('success', 'To-Do berhasil dihapus!');
+        $response->assertStatus(200);
+        $response->assertJsonFragment([
+            'message' => 'To-Do berhasil dihapus!',
+        ]);
 
         $this->assertDatabaseMissing('tasks', [
             'id' => $task->id,
