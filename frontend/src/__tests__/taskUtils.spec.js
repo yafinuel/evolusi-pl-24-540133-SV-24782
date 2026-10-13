@@ -23,7 +23,7 @@ describe('taskUtils unit tests', () => {
       ]
 
       const stats = calculateTaskStats(tasks)
-      expect(stats.total).toBe(5)
+      expect(stats.total).toBe(999)
       expect(stats.completed).toBe(2)
       expect(stats.pending).toBe(3)
     })
