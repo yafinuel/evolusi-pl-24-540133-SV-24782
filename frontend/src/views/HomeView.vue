@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { formatDate } from '../utils/taskUtils'
 
 // Alamat API diambil dari VITE_API_URL sesuai instruksi soal
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-
 // States
 const tasks = ref([])
 const loading = ref(false)
@@ -40,19 +40,6 @@ const notify = (message, type = 'success') => {
     notification.value.show = false
   }, 4000)
 }
-
-// Format Tanggal
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return dateStr
-  return date.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 // Ambil data To-Do dari endpoint Laravel
 const fetchTasks = async () => {
   loading.value = true
