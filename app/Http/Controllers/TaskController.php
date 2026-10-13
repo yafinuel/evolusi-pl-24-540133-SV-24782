@@ -3,39 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 
 /**
  * Class TaskController
  *
- * Handles CRUD actions and status toggles for To-Do items in mytodoweb.
+ * Handles RESTful API actions and status toggles for To-Do items in mytodoweb.
  */
 class TaskController extends Controller
 {
     /**
-     * Display the mytodoweb main dashboard with all to-do tasks.
+     * Retrieve a list of all to-do tasks.
      *
-     * @return View
+     * @return JsonResponse
      */
-    public function index(): View
+    public function index(): JsonResponse
     {
-        // Retrieve tasks ordered by completion status (uncompleted first) and creation date (newest first)
         $tasks = Task::orderBy('is_completed', 'asc')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('task.index', compact('tasks'));
+        return response()->json($tasks);
     }
 
     /**
-     * Store a newly created task from the dashboard form.
+     * Store a newly created task from request.
      *
      * @param Request $request
-     * @return RedirectResponse
+     * @return JsonResponse
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -43,30 +41,33 @@ class TaskController extends Controller
             'due_date' => 'nullable|date',
         ]);
 
-        Task::create($validated);
+        $task = Task::create($validated);
 
-        return redirect()->route('tasks.index')->with('success', 'To-Do berhasil ditambahkan!');
+        return response()->json([
+            'message' => 'To-Do berhasil ditambahkan!',
+            'task' => $task,
+        ], 201);
     }
 
     /**
-     * Display the form for editing the specified task.
+     * Display the specified task details.
      *
      * @param Task $task
-     * @return View
+     * @return JsonResponse
      */
-    public function edit(Task $task): View
+    public function show(Task $task): JsonResponse
     {
-        return view('task.edit', compact('task'));
+        return response()->json($task);
     }
 
     /**
-     * Update the specified task in storage and redirect to dashboard.
+     * Update the specified task in storage.
      *
      * @param Request $request
      * @param Task $task
-     * @return RedirectResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, Task $task): RedirectResponse
+    public function update(Request $request, Task $task): JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -75,20 +76,25 @@ class TaskController extends Controller
             'is_completed' => 'nullable|boolean',
         ]);
 
-        $validated['is_completed'] = $request->has('is_completed');
+        if ($request->has('is_completed')) {
+            $validated['is_completed'] = $request->boolean('is_completed');
+        }
 
         $task->update($validated);
 
-        return redirect()->route('tasks.index')->with('success', 'To-Do berhasil diperbarui!');
+        return response()->json([
+            'message' => 'To-Do berhasil diperbarui!',
+            'task' => $task,
+        ]);
     }
 
     /**
-     * Toggle completion status of a task directly from dashboard.
+     * Toggle completion status of the specified task.
      *
      * @param Task $task
-     * @return RedirectResponse
+     * @return JsonResponse
      */
-    public function toggle(Task $task): RedirectResponse
+    public function toggle(Task $task): JsonResponse
     {
         $task->update([
             'is_completed' => !$task->is_completed,
@@ -96,19 +102,24 @@ class TaskController extends Controller
 
         $message = $task->is_completed ? 'To-Do ditandai selesai!' : 'To-Do ditandai belum selesai!';
 
-        return redirect()->route('tasks.index')->with('success', $message);
+        return response()->json([
+            'message' => $message,
+            'task' => $task,
+        ]);
     }
 
     /**
      * Remove the specified task from storage.
      *
      * @param Task $task
-     * @return RedirectResponse
+     * @return JsonResponse
      */
-    public function destroy(Task $task): RedirectResponse
+    public function destroy(Task $task): JsonResponse
     {
         $task->delete();
 
-        return redirect()->route('tasks.index')->with('success', 'To-Do berhasil dihapus!');
+        return response()->json([
+            'message' => 'To-Do berhasil dihapus!',
+        ]);
     }
 }
